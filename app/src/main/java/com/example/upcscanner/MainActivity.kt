@@ -65,13 +65,16 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.app.ActivityCompat
 import android.app.Activity
+import android.app.AlertDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
+
 //for numeric keyboard
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
+
 //for card appearance
 import androidx.compose.material3.Card
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,10 +86,16 @@ import kotlinx.coroutines.selects.select
 
 import androidx.compose.foundation.layout.Spacer
 
+//for little clear button on search bar
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
+
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 
@@ -251,7 +260,7 @@ fun App() {
         )
     }
 
-    if(showNewInventoryDialog) {
+    if (showNewInventoryDialog) {
         AlertDialog(
             onDismissRequest = {
                 showNewInventoryDialog = false
@@ -564,6 +573,10 @@ fun UPCScannerScreen(
         mutableStateOf("")
     }
 
+    var searchProduct by remember {
+        mutableStateOf("")
+    }
+
     BackHandler(enabled = scanning) {
         scanning = false
     }
@@ -719,8 +732,44 @@ fun UPCScannerScreen(
 
 
         if (!scanning) {
+
+            //Displays the search box
+            OutlinedTextField(
+                value = searchProduct,
+                onValueChange = {
+                    searchProduct = it
+                },
+                label = {
+                    Text("Search")
+                },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    if (searchProduct.isNotEmpty()) {
+                        IconButton(
+                            onClick = {
+                                searchProduct = ""
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear search"
+                            )
+                        }
+                    }
+                }
+            )
+
+            val filteredIndex = inventory.indices.filter { index ->
+                inventory[index].name.contains(searchProduct, ignoreCase = true) ||
+                inventory[index].upc.contains(searchProduct)
+            }
+
+            //shows the individual items in a list
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                itemsIndexed(inventory) { index, product ->
+                itemsIndexed(filteredIndex) { _, index, ->
+
+                    val product = inventory[index]
 
                     Card(
                         modifier = Modifier
